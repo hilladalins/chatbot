@@ -3,16 +3,19 @@ This is the template server side for ChatBot
 """
 from bottle import route, run, template, static_file, request
 import json
+import requests
+
 
 ANSWERS_DICT = {"color": "purple", "weather": "rainy", "city": "Berlin", "country": "Israel",
-                "food": "meatballs"}
+                "food": "meatballs", "movie": "beautiful woman", "series": "casa del papel"}
 CURSES = ("arse", "ass", "asshole", "bastard", "bitch", "crap", "cunt", "damn", "fuck", "holy shit",
           "mother fucker", "nigga", "nigger", "shit", "whore")
+ANSWER_FOR_CURSING = "Why like this?? Go wash your mouth with a soap"
 
 
 def handle_input(input_text):
     if check_if_swear(input_text):
-        return "Why like this?? Go wash your mouth with a soap"
+        return ANSWER_FOR_CURSING
     global first_answer
     if first_answer:
         first_answer = False
@@ -20,14 +23,18 @@ def handle_input(input_text):
         return hello(input_words[-1])
     elif input_text.endswith('?'):
         return give_answer(input_text)
+    elif "bye" in (input_text.lower()):
+        return say_goodbye()
+    elif "joke" in (input_text.lower()):
+        return get_joke()
 
 
 def check_if_swear(text):
-    words = text.split()
-    for word in words:
-        if word in CURSES:
-            return True
-    return False
+    words = text.lower().split()
+    if any(word in CURSES for word in words):
+        return True
+    else:
+        return False
 
 
 first_answer = True
@@ -45,6 +52,18 @@ def give_answer(question, answers=ANSWERS_DICT):
             answer = answers[word]
             return answer
     return "I don't know"
+
+
+def get_joke():
+    joke = requests.get('https://geek-jokes.sameerkumar.website/api')
+    return joke.text
+
+# def get_song():
+#     songs = requests.get('http://ws.audioscrobbler.com/2.0/')
+
+
+def say_goodbye():
+    return "Bye - Bye"
 
 
 @route('/', method='GET')
