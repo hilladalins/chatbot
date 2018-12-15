@@ -12,6 +12,7 @@ ANSWERS_DICT = {"color": "purple", "weather": "rainy", "city": "Berlin", "countr
 CURSES = ("arse", "ass", "asshole", "bastard", "bitch", "crap", "cunt", "damn", "fuck", "holy shit",
           "mother fucker", "nigga", "nigger", "shit", "whore")
 ANSWER_FOR_CURSING = "Why like this?? Go wash your mouth with a soap"
+MONEY_STATE = "You're talking about money while I don't have enough to pay my rent. Can you help me?"
 
 
 def handle_input(input_text):
@@ -32,14 +33,14 @@ def handle_input(input_text):
             return cat_lover()
     elif "joke" in input_text.lower() or "joke?" in input_text.lower():
         return get_joke()
-    elif "bye" in input_text.lower():
-        return say_goodbye()
     elif "i love you" in input_text.lower() or "i love u" in input_text.lower():
         return give_love_back()
     elif "i hate you" in input_text.lower() or "i don't love u" in input_text.lower():
         return handle_hating()
     elif "money" in input_text.lower():
         return handle_money_talking()
+    elif "bye" in input_text.lower():
+        return say_goodbye()
     elif input_text.startswith("I"):
         return me_too()
     elif input_text.lower().startswith('can') or input_text.lower().startswith('could'):
@@ -62,16 +63,8 @@ def check_if_swear(text):
         return False
 
 
-def handle_money_talking():
-    return "money", "You're talking about money while I don't have enough to pay my rent. Can you help me?"
-
-
 def handle_with_swear():
     return "no", ANSWER_FOR_CURSING
-
-
-def handle_hating():
-    return "heartbrake", "I was never been treated like this"
 
 
 def hello(input_text):
@@ -90,30 +83,6 @@ def hello(input_text):
     return animation, msg
 
 
-def give_answer(question, answers=ANSWERS_DICT):
-    question = question[:-1]  # remove the question mark
-    words = question.split()
-    for word in words:
-        if word in answers:
-            answer = answers[word]
-            return "excited", answer
-    return "confused", "I don't understand"
-
-
-def me_too():
-    return "takeoff", "Me too!"
-
-
-def get_joke():
-    server_data = requests.get('https://geek-jokes.sameerkumar.website/api')
-    joke = server_data.text.replace("&quot;", '"')
-    return "laughing", joke
-
-
-def handle_can_request():
-    return "ok", "Yes, we can!"
-
-
 def dog_lover():
     return "dog", "Me too!"
 
@@ -122,12 +91,44 @@ def cat_lover():
     return "afraid", "I hate cats. I believe they gonna take over the world one day!"
 
 
+def get_joke():
+    server_data = requests.get('https://geek-jokes.sameerkumar.website/api')
+    joke = server_data.text.replace("&quot;", '"')
+    return "laughing", joke
+
+
 def give_love_back():
     return "inlove", "I love you to, {}".format(name)
 
 
+def handle_hating():
+    return "heartbroke", "I was never been treated like this"
+
+
+def handle_money_talking():
+    return "money", MONEY_STATE
+
+
 def say_goodbye():
     return "crying", "Bye - Bye"
+
+
+def me_too():
+    return "takeoff", "Me too!"
+
+
+def handle_can_request():
+    return "ok", "Yes, we can!"
+
+
+def give_answer(question, answers=ANSWERS_DICT):
+    question = question[:-1]  # remove the question mark
+    words = question.split()
+    for word in words:
+        if word in answers:
+            answer = answers[word]
+            return "excited", answer
+    return "confused", "I don't understand"
 
 
 def ask_for_a_question():
