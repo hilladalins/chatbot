@@ -1,13 +1,14 @@
 """
 This is the template server side for ChatBot
 """
-from bottle import route, run, template, static_file, request
+from bottle import route, run, template, static_file, request, response
 import json
 import requests
 
 
 ANSWERS_DICT = {"color": "purple", "weather": "rainy", "city": "Berlin", "country": "Israel",
-                "food": "meatballs", "movie": "beautiful woman", "series": "casa del papel"}
+                "food": "meatballs", "movie": "beautiful woman", "series": "casa del papel",
+                "sport": "dancing"}
 CURSES = ("arse", "ass", "asshole", "bastard", "bitch", "crap", "cunt", "damn", "fuck", "holy shit",
           "mother fucker", "nigga", "nigger", "shit", "whore")
 ANSWER_FOR_CURSING = "Why like this?? Go wash your mouth with a soap"
@@ -15,18 +16,42 @@ ANSWER_FOR_CURSING = "Why like this?? Go wash your mouth with a soap"
 
 def handle_input(input_text):
     if check_if_swear(input_text):
-        return ANSWER_FOR_CURSING
+        return handle_with_swear()
     global first_answer
     if first_answer:
         first_answer = False
-        input_words = input_text.split()
-        return hello(input_words[-1])
+        return hello(input_text)
+    global dog_flag
+    if dog_flag:
+        dog_flag = False
+        if "dog" in input_text.lower():
+            response.set_cookie("animal", "dog")
+            return dog_lover()
+        elif "cat" in input_text.lower():
+            response.set_cookie("animal", "cat")
+            return cat_lover()
+    elif "joke" in input_text.lower() or "joke?" in input_text.lower():
+        return get_joke()
+    elif "bye" in input_text.lower():
+        return say_goodbye()
+    elif "i love you" in input_text.lower() or "i love u" in input_text.lower():
+        return give_love_back()
+    elif "i hate you" in input_text.lower() or "i don't love u" in input_text.lower():
+        return handle_hating()
+    elif "money" in input_text.lower():
+        return handle_money_talking()
+    elif input_text.startswith("I"):
+        return me_too()
+    elif input_text.lower().startswith('can') or input_text.lower().startswith('could'):
+        return handle_can_request()
     elif input_text.endswith('?'):
         return give_answer(input_text)
-    elif "bye" in (input_text.lower()):
-        return say_goodbye()
-    elif "joke" in (input_text.lower()):
-        return get_joke()
+    else:
+        return ask_for_a_question()
+
+
+first_answer = True
+dog_flag = True
 
 
 def check_if_swear(text):
@@ -37,11 +62,32 @@ def check_if_swear(text):
         return False
 
 
-first_answer = True
+def handle_money_talking():
+    return "money", "You're talking about money while I don't have enough to pay my rent. Can you help me?"
 
 
-def hello(name):
-    return "Hi {}, nice to meet you".format(name)
+def handle_with_swear():
+    return "no", ANSWER_FOR_CURSING
+
+
+def handle_hating():
+    return "heartbrake", "I was never been treated like this"
+
+
+def hello(input_text):
+    input_words = input_text.split()
+    global name
+    name = input_words[-1]
+    global dog_flag
+    if request.get_cookie("name"):
+        dog_flag = False
+        msg = "Welcome back {}! Nice to see here the {} lover again".format(request.get_cookie("name"), request.get_cookie("animal"))
+        animation = "dancing"
+    else:
+        response.set_cookie("name", name)
+        msg = "Hi {}, nice to meet you. Are you a dog lover or a cat lover?".format(name)
+        animation = "giggling"
+    return animation, msg
 
 
 def give_answer(question, answers=ANSWERS_DICT):
@@ -50,20 +96,42 @@ def give_answer(question, answers=ANSWERS_DICT):
     for word in words:
         if word in answers:
             answer = answers[word]
-            return answer
-    return "I don't know"
+            return "excited", answer
+    return "confused", "I don't understand"
+
+
+def me_too():
+    return "takeoff", "Me too!"
 
 
 def get_joke():
-    joke = requests.get('https://geek-jokes.sameerkumar.website/api')
-    return joke.text
+    server_data = requests.get('https://geek-jokes.sameerkumar.website/api')
+    joke = server_data.text.replace("&quot;", '"')
+    return "laughing", joke
 
-# def get_song():
-#     songs = requests.get('http://ws.audioscrobbler.com/2.0/')
+
+def handle_can_request():
+    return "ok", "Yes, we can!"
+
+
+def dog_lover():
+    return "dog", "Me too!"
+
+
+def cat_lover():
+    return "afraid", "I hate cats. I believe they gonna take over the world one day!"
+
+
+def give_love_back():
+    return "inlove", "I love you to, {}".format(name)
 
 
 def say_goodbye():
-    return "Bye - Bye"
+    return "crying", "Bye - Bye"
+
+
+def ask_for_a_question():
+    return "bored", "I'm getting bored. Don't you have anything interesting to ask me??"
 
 
 @route('/', method='GET')
@@ -74,8 +142,8 @@ def index():
 @route("/chat", method='POST')
 def chat():
     user_message = request.POST.get('msg')
-    bot_message = handle_input(user_message)
-    return json.dumps({"animation": "inlove", "msg": bot_message})
+    answer = handle_input(user_message)
+    return json.dumps({"animation": answer[0], "msg": answer[1]})
 
 
 @route("/test", method='POST')
